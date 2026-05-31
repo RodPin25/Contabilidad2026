@@ -1,11 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for
-import json
-import os
+from flask_mysqldb import MySQL
 
 app = Flask(__name__)
 
-# ─── Archivo donde se guarda todo ───────────────────────────────
-ARCHIVO_DATOS = 'datos.json'
+# ─── Configuración de MySQL (Laragon) ───────────────────────────
+app.config['MYSQL_HOST']     = '127.0.0.1'
+app.config['MYSQL_USER']     = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB']       = 'contabilidad2026'
+app.config['MYSQL_PORT']     = 3306
+
+mysql = MySQL(app)
 
 # ─── Datos de la empresa ────────────────────────────────────────
 empresa = {
@@ -15,58 +20,91 @@ empresa = {
     "giro":      "Distribución de productos electrónicos"
 }
 
-# ─── Cargar datos desde archivo ─────────────────────────────────
-def cargar_datos():
-    if os.path.exists(ARCHIVO_DATOS):
-        with open(ARCHIVO_DATOS, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return {
-        "activo_corriente":     [],
-        "activo_no_corriente":  [],
-        "pasivo_corriente":     [],
-        "pasivo_no_corriente":  [],
-        "capital":              []
-    }
-
-# ─── Guardar datos en archivo ───────────────────────────────────
-def guardar_datos(datos):
-    with open(ARCHIVO_DATOS, 'w', encoding='utf-8') as f:
-        json.dump(datos, f, ensure_ascii=False, indent=2)
-
-# ─── Página principal → redirige al inventario ──────────────────
+# ─── Página principal ────────────────────────────────────────────
 @app.route('/')
 def index():
     return redirect(url_for('inventario'))
 
-# ─── Ver inventario ─────────────────────────────────────────────
+# ─── Ver inventario ──────────────────────────────────────────────
 @app.route('/inventario')
 def inventario():
-    datos = cargar_datos()
-    return render_template('inventario.html', empresa=empresa, datos=datos)
+    cur = mysql.connection.cursor()
 
-# ─── Agregar partida ────────────────────────────────────────────
+    # Traer todas las cuentas con su tipo
+    cur.execute("""
+        SELECT c.idCuenta, c.nombreCuenta, c.descripcion, c.monto, t.nombreCuenta
+        FROM Cuenta c
+        JOIN TiposCuentas t ON c.idTipoCuenta = t.idTipoCuenta
+        ORDER BY t.idTipoCuenta, c.idCuenta
+    """)
+    cuentas = cur.fetchall()
+
+    # Traer tipos de cuentas para el formulario
+    cur.execute("SELECT idTipoCuenta, nombreCuenta FROM TiposCuentas")
+    tipos = cur.fetchall()
+
+    cur.close()
+
+    # Organizar por sección
+    datos = {
+        "Activo Corriente":    [],
+        "Activo No Corriente": [],
+        "Pasivo Corriente":    [],
+        "Pasivo No Corriente": [],
+        "Capital Contable":    []
+    }
+    for cuenta in cuentas:
+        seccion = cuenta[4]
+        if seccion in datos:
+            datos[seccion].append({
+                "id":          cuenta[0],
+                "nombre":      cuenta[1],
+                "descripcion": cuenta[2],
+                "monto":       float(cuenta[3])
+            })
+
+    return render_template('inventario.html',
+                        empresa=empresa,
+                        datos=datos,
+                        tipos=tipos)
+
+# ─── Agregar cuenta ──────────────────────────────────────────────
 @app.route('/agregar', methods=['POST'])
 def agregar():
-    datos = cargar_datos()
-    seccion = request.form['seccion']
-    partida = {
-        "codigo":      request.form['codigo'],
-        "nombre":      request.form['nombre'],
-        "descripcion": request.form['descripcion'],
-        "monto":       float(request.form['monto'])
-    }
-    datos[seccion].append(partida)
-    guardar_datos(datos)
+    nombre      = request.form['nombre']
+    descripcion = request.form['descripcion']
+    monto       = float(request.form['monto'])
+    idTipo      = int(request.form['idTipoCuenta'])
+
+    cur = mysql.connection.cursor()
+
+    # Buscar o crear inventario de la empresa (usamos idEmpresa=1)
+    cur.execute("SELECT idInventario FROM Inventario WHERE idEmpresa = 1")
+    inv = cur.fetchone()
+    if not inv:
+        cur.execute("INSERT INTO Inventario (idEmpresa) VALUES (1)")
+        mysql.connection.commit()
+        idInventario = cur.lastrowid
+    else:
+        idInventario = inv[0]
+
+    cur.execute("""
+        INSERT INTO Cuenta (nombreCuenta, descripcion, monto, idTipoCuenta, idInventario)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (nombre, descripcion, monto, idTipo, idInventario))
+
+    mysql.connection.commit()
+    cur.close()
     return redirect(url_for('inventario'))
 
-# ─── Eliminar partida ───────────────────────────────────────────
+# ─── Eliminar cuenta ─────────────────────────────────────────────
 @app.route('/eliminar', methods=['POST'])
 def eliminar():
-    datos = cargar_datos()
-    seccion = request.form['seccion']
-    indice  = int(request.form['indice'])
-    datos[seccion].pop(indice)
-    guardar_datos(datos)
+    idCuenta = int(request.form['idCuenta'])
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM Cuenta WHERE idCuenta = %s", (idCuenta,))
+    mysql.connection.commit()
+    cur.close()
     return redirect(url_for('inventario'))
 
 if __name__ == '__main__':
