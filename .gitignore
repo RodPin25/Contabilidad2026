@@ -1,0 +1,41 @@
+# Archivos temporales de Python 
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.html
+.css
+.js
+
+# Entornos Virtuales 
+env/
+venv/
+ENV/
+.env/
+
+# Archivos de configuración local y credenciales
+.env
+.flaskenv
+
+# Carpetas de Editores 
+.vscode/
+.idea/
+*.swp
+*~
+
+#Archivos del Sistema Operativo 
+Thumbs.db
+Background.bmp
+Desktop.ini
+.DS_Store
+
+#otros
+GEMINI.md
+
+*.html
+*.css
+*.js
+fronted/
+datos.json
