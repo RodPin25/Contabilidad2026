@@ -1,48 +1,42 @@
-from fastapi import APIRouter
-from modelos.partida import PartidaInput
+from flask import Blueprint, jsonify
 from controllers.diario_controller import DiarioController
-# CAPA routes  
 
-# @jonas:aca es la cara pública de nuestro módulo.
-# Siguiendo la arquitectura de TATSebas, las rutas están "limpias". Su única función 
-# es definir los endpoints HTTP y pasarle la bola rápido a 'DiarioController'.
-router = APIRouter()
-@router.post("/partidas/", status_code=201)
-def registrar_partida(partida: PartidaInput):
-    
-    #Endpoint para recibir y procesar una nueva partida desde el frontend.    
-    # @jonas: Recibe el JSON validado por Pydantic y se lo tira al controlador.
-    return DiarioController.crear_partida(partida)
+# CAPA ROUTES 
+# @jonas: Creamos el Blueprint oficial. Su unica tarea es mapear los endpoints HTTP 
+# y trasladar la ejecucion al controlador respectivo.
 
+router = Blueprint('diario_blueprint', __name__)
 
-@router.get("/libro-diario/")
+@router.route("/partidas", methods=["POST"])
+def registrar_partida():
+    return DiarioController.crear_partida()
+
+@router.route("/libro-diario", methods=["GET"])
 def obtener_libro_diario():
-    
-    #Endpoint para consultar el reporte completo del Libro Diario.  
     return DiarioController.listar_diario()
 
-
-@router.get("/libro-mayor/")
+@router.route("/libro-mayor", methods=["GET"])
 def obtener_libro_mayor():
-    
-    #Endpoint para consultar los saldos acumulados (Libro Mayor) <-- pal muchacho aureo.
-    
-    #nota para: @aureo: De esta URL es clave para tu fetch para las 'T' gráficas.
     return DiarioController.generar_mayor()
 
+@router.route("/inicializar-transacciones", methods=["POST"])
+def precargar_datos():
+    # Endpoint clave para llenar la base de datos con las 25 transacciones de la rúbrica.
+    return DiarioController.ejecutar_precarga_transacciones()
 
-@router.get("/cuentas-disponibles/")
+@router.route("/ejecutar-cierre", methods=["POST"])
+def ejecutar_cierre_mensual():
+    # Endpoint para automatizar la regularización de IVA y partidas de cierre.
+    return DiarioController.ejecutar_corte_operaciones()
+
+@router.route("/cuentas-disponibles", methods=["GET"])
 def obtener_cuentas_disponibles():
-
-    # NOTA DE INTEGRACIÓN: Hacemos una lectura rápida a la tabla 'cuenta' 
-    # de Sochito para que el frontend pinte los nombres reales en el formulario de partidas.
-    from configuracion.DataBase import get_db_connection
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    # @jonas: Jala las cuentas vivas del catalogo de Sochito para los formularios
+    from database.connection import mysql
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT idCuenta, nombreCuenta FROM cuenta")
+    cuentas = cur.fetchall()
+    cur.close()
     
-    cursor.execute("SELECT idCuenta, nombreCuenta FROM Cuenta")
-    cuentas = cursor.fetchall()
-    
-    cursor.close()
-    conn.close()
-    return cuentas
+    resultado = [{"idCuenta": c[0], "nombreCuenta": c[1]} for c in cuentas]
+    return jsonify(resultado), 200
