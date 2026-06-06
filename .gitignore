@@ -23,3 +23,7 @@ static/
 
 # Base de datos local (ahora usamos MySQL)
 datos.json
+
+# Cache de Python
+__pycache__/
+*.pyc
