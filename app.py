@@ -1,17 +1,32 @@
 from flask import Flask, redirect, url_for, jsonify
-from config import Config
-from database.connection import init_db
-from routes.inventario_routes import inventario_bp
+from flask_jwt_extended import JWTManager
 from flask_swagger_ui import get_swaggerui_blueprint
 
-app = Flask(__name__)
-app.config.from_object(Config)
-init_db(app)
+# Asegúrate de importar tus funciones/clases desde tus otros archivos
+from config import Config
+from Database import connection
+from routes.inventario_routes import inventario_bp
 
-# ─── Swagger UI ──────────────────────────────────────────────────
+# Variables de entorno
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
+
+app = Flask(__name__)
+
+# 1. Configuración
+app.config.from_object(Config)
+app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET')
+
+# 2. Inicialización de Extensiones
+jwt = JWTManager(app)
+connection(app) # Tu función que conecta pyodbc
+
+# 3. Swagger UI Config
 SWAGGER_URL = '/docs'
 API_URL = '/swagger.json'
-
 swaggerui_bp = get_swaggerui_blueprint(SWAGGER_URL, API_URL)
 app.register_blueprint(swaggerui_bp, url_prefix=SWAGGER_URL)
 
@@ -21,47 +36,18 @@ def swagger_json():
         "swagger": "2.0",
         "info": {
             "title": "API Contabilidad - Distribuidora Don Bosco",
-            "description": "Sistema contable Distribuidora Don Bosco",
+            "description": "Sistema contable",
             "version": "1.0.0"
         },
         "host": "127.0.0.1:5000",
         "basePath": "/",
         "tags": [{"name": "Inventario"}],
         "paths": {
-            "/inventario": {
-                "get": {
-                    "tags": ["Inventario"],
-                    "summary": "Ver inventario completo",
-                    "responses": {"200": {"description": "Página HTML con inventario"}}
-                }
-            },
-            "/inventario/agregar": {
-                "post": {
-                    "tags": ["Inventario"],
-                    "summary": "Agregar cuenta contable",
-                    "parameters": [
-                        {"name": "nombre", "in": "formData", "type": "string", "required": True},
-                        {"name": "descripcion", "in": "formData", "type": "string", "required": True},
-                        {"name": "monto", "in": "formData", "type": "number", "required": True},
-                        {"name": "idTipoCuenta", "in": "formData", "type": "integer", "required": True}
-                    ],
-                    "responses": {"302": {"description": "Redirige al inventario"}}
-                }
-            },
-            "/inventario/eliminar": {
-                "post": {
-                    "tags": ["Inventario"],
-                    "summary": "Eliminar cuenta contable",
-                    "parameters": [
-                        {"name": "idCuenta", "in": "formData", "type": "integer", "required": True}
-                    ],
-                    "responses": {"302": {"description": "Redirige al inventario"}}
-                }
-            }
+            # Aquí van tus endpoints definidos en el JSON
         }
     })
 
-# ─── Rutas ───────────────────────────────────────────────────────
+# 4. Registro de Blueprints (Rutas)
 app.register_blueprint(inventario_bp)
 
 @app.route('/')
