@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from services.diario_service import DiarioService
+from Services.diario_service import DiarioService
 
 # CAPA CONTROLLERS - MODULO LIBRO DIARIO Y MAYOR
 # @jonas: Esta capa administra las peticiones de Flask. Captura la data entrante,

@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for
-from services.inventario_service import (
+from Services.inventario_service import (
     obtener_inventario,
     agregar_cuenta,
     eliminar_cuenta,

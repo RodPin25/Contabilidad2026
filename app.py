@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, jsonify
+from flask import Flask, redirect, url_for, jsonify, render_template
 from flask_jwt_extended import JWTManager
 from flask_swagger_ui import get_swaggerui_blueprint
 
@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+app.config.from_object(Config)
 
 # 1. Configuración
 app.config.from_object(Config)
@@ -22,7 +23,6 @@ app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET')
 
 # 2. Inicialización de Extensiones
 jwt = JWTManager(app)
-connection(app) # Tu función que conecta pyodbc
 
 # 3. Swagger UI Config
 SWAGGER_URL = '/docs'
@@ -50,9 +50,36 @@ def swagger_json():
 # 4. Registro de Blueprints (Rutas)
 app.register_blueprint(inventario_bp)
 
+
+# ============= Llamadas a las rutas para renderizar frontend ==================
+
 @app.route('/')
 def index():
-    return redirect(url_for('inventario.ver_inventario'))
+    return render_template('index.html');
+
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+@app.route('/diario')
+def ver_diario():
+    return render_template('diario.html')
+
+@app.route('/inventario')
+def inventario():
+    return render_template('inventario.html')
+
+@app.route('/signup')
+def signup():
+    return render_template('signup.html')
+
+@app.route('/mayor')
+def mayor():
+    return render_template('mayor.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

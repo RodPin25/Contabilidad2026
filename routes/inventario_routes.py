@@ -1,5 +1,5 @@
 from flask import Blueprint
-from controllers.inventario_controller import (
+from Controllers.inventario_controller import (
     ctrl_ver_inventario,
     ctrl_agregar_cuenta,
     ctrl_eliminar_cuenta,

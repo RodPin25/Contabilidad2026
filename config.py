@@ -1,9 +1,8 @@
+# config.py
 import os
 
-
 class Config:
-    MYSQL_HOST = os.getenv("DB_HOST", "127.0.0.1")
-    MYSQL_USER = os.getenv("DB_USER", "root")
-    MYSQL_PASSWORD = os.getenv("DB_PASSWORD", "")
-    MYSQL_DB = os.getenv("DB_NAME", "Contabilidad2026")
-    MYSQL_PORT = int(os.getenv("DB_PORT", "1433"))
+    DB_SERVER = os.getenv("DB_SERVER", "tu_ip_servidor")
+    DB_DATABASE = os.getenv("DB_DATABASE", "Contabilidad2026")
+    DB_USER = os.getenv("DB_USER", "SA")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "TuPasswordFuerte")

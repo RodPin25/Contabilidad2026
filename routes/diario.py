@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from controllers.diario_controller import DiarioController
+from Controllers.diario_controller import DiarioController
 
 # CAPA ROUTES 
 # @jonas: Creamos el Blueprint oficial. Su unica tarea es mapear los endpoints HTTP 

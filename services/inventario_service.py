@@ -1,10 +1,11 @@
-from database.connection import mysql
+from Database.connection import get_db_connection
 
-# Acá se obtienen todas las cuentas organizadas por sección 
 def obtener_inventario():
-    cur = mysql.connection.cursor()
+    conn = get_db_connection()
+    cur = conn.cursor()
+    # Usamos alias claros
     cur.execute("""
-        SELECT c.idCuenta, c.nombreCuenta, c.descripcion, c.monto, t.nombreCuenta
+        SELECT c.idCuenta, c.nombreCuenta, c.descripcion, c.monto, t.nombreCuenta as seccion
         FROM Cuenta c
         JOIN TiposCuentas t ON c.idTipoCuenta = t.idTipoCuenta
         ORDER BY t.idTipoCuenta, c.idCuenta
@@ -14,103 +15,101 @@ def obtener_inventario():
     cur.execute("SELECT idTipoCuenta, nombreCuenta FROM TiposCuentas")
     tipos = cur.fetchall()
     cur.close()
+    conn.close()
 
     datos = {
-        "Activo Corriente":    [],
-        "Activo No Corriente": [],
-        "Pasivo Corriente":    [],
-        "Pasivo No Corriente": [],
-        "Capital Contable":    []
+        "Activo Corriente": [], "Activo No Corriente": [],
+        "Pasivo Corriente": [], "Pasivo No Corriente": [],
+        "Capital Contable": []
     }
     for cuenta in cuentas:
-        seccion = cuenta[4]
-        if seccion in datos:
-            datos[seccion].append({
-                "id":          cuenta[0],
-                "nombre":      cuenta[1],
-                "descripcion": cuenta[2],
-                "monto":       float(cuenta[3])
+        # cuenta[4] es 'seccion'
+        if cuenta[4] in datos:
+            datos[cuenta[4]].append({
+                "id": cuenta[0], "nombre": cuenta[1], 
+                "descripcion": cuenta[2], "monto": float(cuenta[3])
             })
-
     return datos, tipos
 
-# Acá agregamos las cuentas 
 def agregar_cuenta(nombre, descripcion, monto, idTipo):
-    cur = mysql.connection.cursor()
+    conn = get_db_connection()
+    cur = conn.cursor()
 
     cur.execute("SELECT idInventario FROM Inventario WHERE idEmpresa = 1")
     inv = cur.fetchone()
+    
     if not inv:
         cur.execute("INSERT INTO Inventario (idEmpresa) VALUES (1)")
-        mysql.connection.commit()
-        idInventario = cur.lastrowid
+        # En SQL Server, obtenemos el ID así:
+        cur.execute("SELECT SCOPE_IDENTITY()")
+        idInventario = cur.fetchone()[0]
+        conn.commit()
     else:
         idInventario = inv[0]
 
     cur.execute("""
         INSERT INTO Cuenta (nombreCuenta, descripcion, monto, idTipoCuenta, idInventario)
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES (?, ?, ?, ?, ?)
     """, (nombre, descripcion, monto, idTipo, idInventario))
 
-    mysql.connection.commit()
+    conn.commit()
     cur.close()
+    conn.close()
 
-# Acá eliminamos las cuentas 
 def eliminar_cuenta(idCuenta):
-    cur = mysql.connection.cursor()
-    cur.execute("DELETE FROM Cuenta WHERE idCuenta = %s", (idCuenta,))
-    mysql.connection.commit()
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM Cuenta WHERE idCuenta = ?", (idCuenta,))
+    conn.commit()
     cur.close()
-    
-# ─── Generar Partida 1 - Apertura ────────────────────────────────
-def generar_partida_apertura():
-    cur = mysql.connection.cursor()
+    conn.close()
 
-    # Verificar si ya existe un libro diario para este mes
+def generar_partida_apertura():
+    conn = get_db_connection()
+    cur = conn.cursor()
     from datetime import date
     hoy = date.today()
 
     cur.execute("""
         SELECT idLibroDiario FROM LibroDiario 
-        WHERE mes = %s AND year = %s AND idEmpresa = 1
+        WHERE mes = ? AND year = ? AND idEmpresa = 1
     """, (hoy.month, hoy.year))
     libro = cur.fetchone()
 
     if not libro:
         cur.execute("""
             INSERT INTO LibroDiario (mes, year, idEmpresa)
-            VALUES (%s, %s, 1)
+            VALUES (?, ?, 1)
         """, (hoy.month, hoy.year))
-        mysql.connection.commit()
-        idLibro = cur.lastrowid
+        cur.execute("SELECT SCOPE_IDENTITY()")
+        idLibro = cur.fetchone()[0]
+        conn.commit()
     else:
         idLibro = libro[0]
 
-    # Verificar si ya existe la partida 1
     cur.execute("""
         SELECT idPartida FROM Partidas 
-        WHERE noPartida = 1 AND idLibroDiario = %s
+        WHERE noPartida = 1 AND idLibroDiario = ?
     """, (idLibro,))
     existe = cur.fetchone()
 
     if existe:
         cur.close()
+        conn.close()
         return {"mensaje": "La partida de apertura ya existe", "existe": True}
 
-    # Crear la partida 1
     cur.execute("""
         INSERT INTO Partidas (noPartida, descripcionPartida, fechaPartida, idLibroDiario)
-        VALUES (1, 'Partida de apertura - Inventario inicial', %s, %s)
+        VALUES (1, 'Partida de apertura - Inventario inicial', ?, ?)
     """, (hoy, idLibro))
-    mysql.connection.commit()
+    conn.commit()
     cur.close()
+    conn.close()
+    return {"mensaje": "Partida generada", "existe": False}
 
-    return {"mensaje": "Partida de apertura generada exitosamente", "existe": False}
-
-
-# ─── Obtener Partida 1 para mostrar ──────────────────────────────
 def obtener_partida_apertura():
-    cur = mysql.connection.cursor()
+    conn = get_db_connection()
+    cur = conn.cursor()
     from datetime import date
     hoy = date.today()
 
@@ -119,11 +118,10 @@ def obtener_partida_apertura():
         FROM Partidas p
         JOIN LibroDiario l ON p.idLibroDiario = l.idLibroDiario
         WHERE p.noPartida = 1 AND l.idEmpresa = 1
-        AND l.mes = %s AND l.year = %s
+        AND l.mes = ? AND l.year = ?
     """, (hoy.month, hoy.year))
     partida = cur.fetchone()
 
-    # Traer cuentas del inventario agrupadas
     cur.execute("""
         SELECT t.nombreCuenta, SUM(c.monto) as total
         FROM Cuenta c
@@ -135,5 +133,5 @@ def obtener_partida_apertura():
     """)
     cuentas = cur.fetchall()
     cur.close()
-
+    conn.close()
     return partida, cuentas

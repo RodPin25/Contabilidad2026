@@ -1,6 +1,6 @@
 from flask import jsonify, request
 
-from services.mayor_service import MayorService
+from Services.mayor_service import MayorService
 
 
 class MayorController:

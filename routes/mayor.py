@@ -1,6 +1,6 @@
 from flask import Blueprint
 
-from controllers.mayor_controller import MayorController
+from Controllers.mayor_controller import MayorController
 
 
 router = Blueprint("mayor_blueprint", __name__, url_prefix="/libro-mayor")
