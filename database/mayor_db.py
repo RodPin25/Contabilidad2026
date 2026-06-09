@@ -33,19 +33,14 @@ def obtener_cuentas_con_movimientos(id_cuenta=None, fecha_inicio=None, fecha_fin
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # Pasamos los parámetros aquí
         cur.execute(query, tuple(parametros))
         columns = [column[0] for column in cur.description]
-        data = [dict(zip(columns, row)) for row in cur.fetchall()]
         
-        # --- AGREGA ESTO ---
-        print("DEBUG DB:", data[:1]) # Imprime la primera fila para ver si tiene 'descripcionPartida'
-        # -------------------
+        # Convertimos forzosamente a diccionario usando dict()
+        raw_rows = cur.fetchall()
+        results = [dict(zip(columns, row)) for row in raw_rows]
         
-        return data
-    except Exception as e:
-        print(f"Error en SQL: {e}") # Esto te dirá si hay error de columna
-        return []
+        return results
     finally:
         cur.close()
         conn.close()
