@@ -23,3 +23,9 @@ def mayor(): return render_template('mayor.html')
 
 @views_bp.route('/balance-saldos-view')
 def balance_saldos(): return render_template('balance_saldos.html')
+
+@views_bp.route('/estado-resultados-view')
+def estado_resultados(): return render_template('estado_resultados.html')
+
+@views_bp.route('/balance-situacion-view')
+def balance_situacion(): return render_template('balance_situacion.html')
