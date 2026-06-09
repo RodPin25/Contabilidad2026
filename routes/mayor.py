@@ -3,7 +3,7 @@ from flask import Blueprint
 from controllers.mayor_controller import MayorController
 
 
-router = Blueprint("mayor_blueprint", __name__, url_prefix="/libro-mayor")
+router = Blueprint("mayor_blueprint", __name__, url_prefix="/api/libro-mayor")
 
 
 @router.route("", methods=["GET"])
