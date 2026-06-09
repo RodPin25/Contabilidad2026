@@ -1,32 +1,30 @@
 from Database.connection import get_db_connection # Importamos nuestra función de conexión
 
 def obtener_cuentas_con_movimientos(id_cuenta=None, fecha_inicio=None, fecha_fin=None):
-    condiciones = []
     parametros = []
 
+    # Ajustamos la lógica de los filtros
+    where_clauses = ["p.descripcionPartida IS NOT NULL", "p.descripcionPartida <> ''"]
     if id_cuenta is not None:
-        condiciones.append("c.idCuenta = ?")
+        where_clauses.append("c.idCuenta = ?")
         parametros.append(id_cuenta)
     if fecha_inicio is not None:
-        condiciones.append("p.fechaPartida >= ?")
+        where_clauses.append("p.fechaPartida >= ?")
         parametros.append(fecha_inicio)
     if fecha_fin is not None:
-        condiciones.append("p.fechaPartida <= ?")
+        where_clauses.append("p.fechaPartida <= ?")
         parametros.append(fecha_fin)
 
-    where = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
+    where = f"WHERE {' AND '.join(where_clauses)}"
     
-    # IMPORTANTE: Eliminé el comentario y añadí {where} al final
     query = f"""
         SELECT 
             c.idCuenta, c.nombreCuenta, p.fechaPartida, 
             p.noPartida, p.descripcionPartida, pc.debe, pc.haber
         FROM PARTIDA_CONTIENE_CUENTA pc
-        INNER JOIN Partidas p ON pc.idPartida = p.idPartida -- Aseguramos que la partida exista
+        INNER JOIN Partidas p ON pc.idPartida = p.idPartida
         JOIN Cuenta c ON pc.idcuenta = c.idCuenta
-        WHERE p.descripcionPartida IS NOT NULL 
-          AND p.descripcionPartida <> '' -- Excluimos registros vacíos
-          {where} -- Aquí concatenas tu filtro dinámico
+        {where}
         ORDER BY p.fechaPartida, p.noPartida
     """
 

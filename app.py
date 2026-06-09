@@ -12,6 +12,7 @@ from routes.view_routes import views_bp
 from routes.diario import router as diario_bp
 from routes.mayor import router as mayor_bp
 from routes.saldos_routes import router as saldos_bp
+from routes.estado_resultado_routes import router as resultados_bp
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -54,6 +55,7 @@ app.register_blueprint(views_bp)
 app.register_blueprint(diario_bp)
 app.register_blueprint(mayor_bp)
 app.register_blueprint(saldos_bp)
+app.register_blueprint(resultados_bp)
 
 if __name__ == '__main__':
     # debug=True es ideal para desarrollo; recuerda cambiarlo en producción
