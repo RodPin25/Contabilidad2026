@@ -13,15 +13,16 @@ def generar_balance_saldos(fecha_inicio, fecha_fin):
     balance_map = {}
 
     # Aplanamos el inventario para inicializar el balance_map
-    for seccion in inventario_datos.values():
-        for cuenta in seccion:
+    for seccion, cuentas in inventario_datos.items():
+        for cuenta in cuentas:
             c_id = cuenta.get('id')
             if c_id is not None:
                 balance_map[c_id] = {
                     "nombre": cuenta.get('nombre', 'Sin nombre'),
                     "inicial": float(cuenta.get('monto', 0) or 0),
                     "debe": 0,
-                    "haber": 0
+                    "haber": 0,
+                    "seccion": seccion
                 }
 
     # 2. Obtener movimientos del Libro Mayor
@@ -38,7 +39,8 @@ def generar_balance_saldos(fecha_inicio, fecha_fin):
                 "nombre": cuenta_mayor.get('nombre_cuenta', 'Cuenta sin nombre'),
                 "inicial": 0,
                 "debe": 0,
-                "haber": 0
+                "haber": 0,
+                "seccion": "Indefinida"
             }
         
         balance_map[c_id]["debe"] += float(cuenta_mayor.get('total_debe', 0) or 0)
@@ -48,8 +50,6 @@ def generar_balance_saldos(fecha_inicio, fecha_fin):
     balance_final = []
     for c_id, data in balance_map.items():
         # Lógica: Inicial + Debe - Haber
-        # Nota: En contabilidad real el saldo final depende de la naturaleza,
-        # pero aquí mantenemos la fórmula solicitada por simplicidad.
         saldo_final = data['inicial'] + data['debe'] - data['haber']
         
         balance_final.append({
@@ -58,7 +58,8 @@ def generar_balance_saldos(fecha_inicio, fecha_fin):
             "inicial":     data['inicial'],
             "debe":        data['debe'],
             "haber":       data['haber'],
-            "saldo_final": saldo_final
+            "saldo_final": saldo_final,
+            "seccion":     data['seccion']
         })
         
     return balance_final

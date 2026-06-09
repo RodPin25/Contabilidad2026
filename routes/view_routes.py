@@ -20,3 +20,6 @@ def signup(): return render_template('signup.html')
 
 @views_bp.route('/mayor')
 def mayor(): return render_template('mayor.html')
+
+@views_bp.route('/balance-saldos-view')
+def balance_saldos(): return render_template('balance_saldos.html')

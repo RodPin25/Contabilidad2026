@@ -30,7 +30,8 @@ def obtener_inventario():
                 "id": cuenta[0], 
                 "nombre": cuenta[1], 
                 "descripcion": cuenta[2], 
-                "monto": float(cuenta[3])
+                "monto": float(cuenta[3]),
+                "seccion": cuenta[4] # Agregamos la sección aquí
             })
     return datos, tipos
 
