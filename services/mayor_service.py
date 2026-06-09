@@ -21,15 +21,15 @@ class MayorService:
 
         cuentas = OrderedDict()
         for fila in filas:
-            cuenta_id = fila[0]
-            tipo_id = fila[2]
+            cuenta_id = fila['idCuenta']
+            tipo_id = fila['idTipoCuenta']
             cuenta = cuentas.setdefault(
                 cuenta_id,
                 {
                     "id_cuenta": cuenta_id,
-                    "nombre_cuenta": fila[1],
+                    "nombre_cuenta": fila['nombreCuenta'],
                     "id_tipo_cuenta": tipo_id,
-                    "tipo_cuenta": fila[3],
+                    "tipo_cuenta": fila['nombreTipo'],
                     "naturaleza": MayorService._obtener_naturaleza(tipo_id),
                     "movimientos": [],
                     "_total_debe": Decimal("0"),
@@ -38,18 +38,18 @@ class MayorService:
                 },
             )
 
-            debe = Decimal(str(fila[9] or 0))
-            haber = Decimal(str(fila[10] or 0))
+            debe = Decimal(str(fila['debe'] or 0))
+            haber = Decimal(str(fila['haber'] or 0))
             cuenta["_total_debe"] += debe
             cuenta["_total_haber"] += haber
             cuenta["_saldo"] += MayorService._variacion_saldo(tipo_id, debe, haber)
 
             cuenta["movimientos"].append(
                 {
-                    "id_partida": fila[4],
-                    "numero_partida": fila[5],
-                    "fecha": str(fila[6]),
-                    "descripcion": fila[7],
+                    "id_partida": fila['idPartida'],
+                    "numero_partida": fila['noPartida'],
+                    "fecha": str(fila['fechaPartida']),
+                    "descripcion": fila['descripcionPartida'],
                     "debe": float(debe),
                     "haber": float(haber),
                     "saldo": float(cuenta["_saldo"]),
@@ -77,11 +77,11 @@ class MayorService:
     def listar_cuentas_disponibles():
         return [
             {
-                "id_cuenta": fila[0],
-                "nombre_cuenta": fila[1],
-                "id_tipo_cuenta": fila[2],
-                "tipo_cuenta": fila[3],
-                "naturaleza": MayorService._obtener_naturaleza(fila[2]),
+                "id_cuenta": fila['idCuenta'],
+                "nombre_cuenta": fila['nombreCuenta'],
+                "id_tipo_cuenta": fila['idTipoCuenta'],
+                "tipo_cuenta": fila['nombreTipo'],
+                "naturaleza": MayorService._obtener_naturaleza(fila['idTipoCuenta']),
             }
             for fila in mayor_db.obtener_cuentas_disponibles()
         ]
