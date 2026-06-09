@@ -1,5 +1,4 @@
-import database.diario_db as diario_db
-from database.connection import mysql
+import Database.diario_db as diario_db
 from datetime import date
 
 # CAPA SERVICES (DLL Contable de la Empresa)

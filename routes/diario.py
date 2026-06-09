@@ -32,11 +32,13 @@ def ejecutar_cierre_mensual():
 @router.route("/cuentas-disponibles", methods=["GET"])
 def obtener_cuentas_disponibles():
     # @jonas: Jala las cuentas vivas del catalogo de Sochito para los formularios
-    from database.connection import mysql
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT idCuenta, nombreCuenta FROM cuenta")
+    from Database.connection import get_db_connection
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT idCuenta, nombreCuenta FROM CUENTA")
     cuentas = cur.fetchall()
     cur.close()
-    
+    conn.close()
+
     resultado = [{"idCuenta": c[0], "nombreCuenta": c[1]} for c in cuentas]
     return jsonify(resultado), 200

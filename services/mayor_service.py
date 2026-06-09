@@ -2,7 +2,7 @@ from collections import OrderedDict
 from datetime import datetime
 from decimal import Decimal
 
-from database import mayor_db
+from Database import mayor_db
 
 
 TIPOS_DEUDORES = {1, 2}

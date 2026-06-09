@@ -9,6 +9,8 @@ from config import Config
 from routes.inventario_routes import inventario_bp
 from routes.auth_routes import auth_bp
 from routes.view_routes import views_bp
+from routes.diario import router as diario_bp
+from routes.mayor import router as mayor_bp
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -48,6 +50,8 @@ def swagger_json():
 app.register_blueprint(inventario_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(views_bp)
+app.register_blueprint(diario_bp)
+app.register_blueprint(mayor_bp)
 
 if __name__ == '__main__':
     # debug=True es ideal para desarrollo; recuerda cambiarlo en producción

@@ -10,7 +10,7 @@ VALUES ('Distribuidora Don Bosco', '123456-7', 'Distribución electrónica', 'Qu
 
 -- Insertar tipos de cuenta
 INSERT INTO TIPOSCUENTAS (nombreCuenta) 
-VALUES ('Activo Corriente'), ('Activo No Corriente'), ('Pasivo'), ('Capital');
+VALUES ('Activo Corriente'), ('Activo No Corriente'), ('Pasivo Corriente'), ('Pasivo No Corriente'), ('Capital Contable');
 
 -- Insertar usuario admin (puedes cambiar 'admin123' por un hash si prefieres)
 INSERT INTO USUARIO (nombreUsuario, pwd, estado, idEmpresa, idRol) 
