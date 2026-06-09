@@ -8,7 +8,10 @@ router = Blueprint("mayor_blueprint", __name__, url_prefix="/libro-mayor")
 
 @router.route("", methods=["GET"])
 def listar_mayor():
-    return MayorController.listar_mayor()
+    print("DEBUG: Entré a la ruta /libro-mayor (listar_mayor)")
+    resultado = MayorController.listar_mayor()
+    print("DEBUG: Controller retornó datos")
+    return resultado
 
 
 @router.route("/cuentas", methods=["GET"])

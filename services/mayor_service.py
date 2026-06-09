@@ -5,73 +5,48 @@ from decimal import Decimal
 from Database import mayor_db
 
 
-TIPOS_DEUDORES = {1, 2}
-TIPOS_ACREEDORES = {3, 4, 5}
+TIPOS_DEUDORES = {5, 6}
+TIPOS_ACREEDORES = {7, 8, 9}
 
 
 class MayorService:
+
+    # Asegúrate de usar esta estructura en tu MayorService.py
     @staticmethod
     def generar_libro_mayor(id_cuenta=None, fecha_inicio=None, fecha_fin=None):
-        MayorService._validar_filtros(id_cuenta, fecha_inicio, fecha_fin)
-        filas = mayor_db.obtener_cuentas_con_movimientos(
-            id_cuenta=id_cuenta,
-            fecha_inicio=fecha_inicio,
-            fecha_fin=fecha_fin,
-        )
+        filas = mayor_db.obtener_cuentas_con_movimientos(id_cuenta, fecha_inicio, fecha_fin)
+        print(filas)
 
-        cuentas = OrderedDict()
+        cuentas_agrupadas = {}
+
         for fila in filas:
-            cuenta_id = fila['idCuenta']
-            tipo_id = fila['idTipoCuenta']
-            cuenta = cuentas.setdefault(
-                cuenta_id,
-                {
-                    "id_cuenta": cuenta_id,
+            c_id = fila['idCuenta']
+            if c_id not in cuentas_agrupadas:
+                cuentas_agrupadas[c_id] = {
+                    "codigo_cuenta": c_id,
                     "nombre_cuenta": fila['nombreCuenta'],
-                    "id_tipo_cuenta": tipo_id,
-                    "tipo_cuenta": fila['nombreTipo'],
-                    "naturaleza": MayorService._obtener_naturaleza(tipo_id),
-                    "movimientos": [],
-                    "_total_debe": Decimal("0"),
-                    "_total_haber": Decimal("0"),
-                    "_saldo": Decimal("0"),
-                },
-            )
-
-            debe = Decimal(str(fila['debe'] or 0))
-            haber = Decimal(str(fila['haber'] or 0))
-            cuenta["_total_debe"] += debe
-            cuenta["_total_haber"] += haber
-            cuenta["_saldo"] += MayorService._variacion_saldo(tipo_id, debe, haber)
-
-            cuenta["movimientos"].append(
-                {
-                    "id_partida": fila['idPartida'],
-                    "numero_partida": fila['noPartida'],
-                    "fecha": str(fila['fechaPartida']),
-                    "descripcion": fila['descripcionPartida'],
-                    "debe": float(debe),
-                    "haber": float(haber),
-                    "saldo": float(cuenta["_saldo"]),
+                    "total_debe": 0,
+                    "total_haber": 0,
+                    "saldo_actual": 0,
+                    "movimientos": []  # <--- AQUÍ ESTÁ EL DETALLE
                 }
-            )
 
-        resultado = []
-        for cuenta in cuentas.values():
-            resultado.append(
-                {
-                    "id_cuenta": cuenta["id_cuenta"],
-                    "nombre_cuenta": cuenta["nombre_cuenta"],
-                    "id_tipo_cuenta": cuenta["id_tipo_cuenta"],
-                    "tipo_cuenta": cuenta["tipo_cuenta"],
-                    "naturaleza": cuenta["naturaleza"],
-                    "total_debe": float(cuenta["_total_debe"]),
-                    "total_haber": float(cuenta["_total_haber"]),
-                    "saldo_final": float(cuenta["_saldo"]),
-                    "movimientos": cuenta["movimientos"],
-                }
-            )
-        return resultado
+            # Agregamos el movimiento con la descripción
+            movimiento = {
+                "fecha": str(fila['fechaPartida']),
+                "numero_partida": fila['noPartida'],
+                "descripcion": fila['descripcionPartida'], # <--- ESTO ES LO QUE TE FALTA
+                "debe": float(fila['debe'] or 0),
+                "haber": float(fila['haber'] or 0),
+                "saldo": 0 # Puedes calcular el saldo acumulado aquí
+            }
+
+            cuentas_agrupadas[c_id]["movimientos"].append(movimiento)
+            cuentas_agrupadas[c_id]["total_debe"] += movimiento["debe"]
+            cuentas_agrupadas[c_id]["total_haber"] += movimiento["haber"]
+            cuentas_agrupadas[c_id]["saldo_actual"] = cuentas_agrupadas[c_id]["total_debe"] - cuentas_agrupadas[c_id]["total_haber"]
+
+        return list(cuentas_agrupadas.values())
 
     @staticmethod
     def listar_cuentas_disponibles():
